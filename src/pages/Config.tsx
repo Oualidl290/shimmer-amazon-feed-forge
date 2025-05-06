@@ -24,11 +24,15 @@ export default function Config() {
   
   const { data: configData, isLoading, error } = useQuery({
     queryKey: ['config'],
-    queryFn: apiService.getConfig,
-    onSuccess: (data) => {
-      setConfig(data);
-    }
+    queryFn: apiService.getConfig
   });
+
+  // Use useEffect to update the state when data is fetched
+  useEffect(() => {
+    if (configData) {
+      setConfig(configData);
+    }
+  }, [configData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
