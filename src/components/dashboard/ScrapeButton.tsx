@@ -1,9 +1,8 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Play, Loader2 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { apiService } from "@/lib/api-service";
+import { Play, Loader2, StopCircle } from "lucide-react";
+import { useScrapingContext } from "@/context/ScrapingContext";
 
 type ScrapeButtonProps = {
   onSuccess?: () => void;
@@ -16,47 +15,37 @@ export default function ScrapeButton({
   size = "default", 
   variant = "default" 
 }: ScrapeButtonProps) {
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
-
-  const handleScrape = async () => {
-    setIsLoading(true);
-    
-    try {
-      // Call the API to start a scraping job
-      const job = await apiService.startScrapeJob();
-      
-      toast({
-        title: "Scraping started successfully",
-        description: "You'll be notified when the process completes",
-      });
-      
+  const { status, startScraping, stopScraping } = useScrapingContext();
+  const isRunning = status === 'running';
+  
+  const handleClick = async () => {
+    if (isRunning) {
+      await stopScraping();
+    } else {
+      await startScraping();
       if (onSuccess) onSuccess();
-    } catch (error) {
-      toast({
-        title: "Failed to start scraping",
-        description: "Please try again or contact support",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
     }
   };
 
   return (
     <Button 
-      onClick={handleScrape} 
-      disabled={isLoading}
+      onClick={handleClick} 
+      disabled={status === 'completed' || status === 'failed'}
       size={size}
       variant={variant}
       className="flex items-center gap-2"
     >
-      {isLoading ? (
-        <Loader2 className="h-4 w-4 animate-spin" />
+      {isRunning ? (
+        <>
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>Stop Scraping</span>
+        </>
       ) : (
-        <Play className="h-4 w-4" />
+        <>
+          <Play className="h-4 w-4" />
+          <span>Start Scraping</span>
+        </>
       )}
-      {isLoading ? "Starting..." : "Start Scraping"}
     </Button>
   );
 }

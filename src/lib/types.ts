@@ -56,3 +56,12 @@ export interface DashboardStats {
   feedStatus: string;
   categoryProgress: CategoryProgress[];
 }
+
+export interface ScrapingStatus {
+  status: "idle" | "running" | "completed" | "failed";
+  progress: number;
+  currentCategory: string;
+  totalProducts: number;
+  errors: number;
+}
+

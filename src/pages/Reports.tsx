@@ -10,19 +10,46 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Download, Eye } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { Download, Eye, FilePlus, Loader2 } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiService } from "@/lib/api-service";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Reports() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [filterType, setFilterType] = useState<string | null>(null);
+  const [generatingReport, setGeneratingReport] = useState<string | null>(null);
   
   const { data: reports, isLoading, error } = useQuery({
     queryKey: ['reports'],
     queryFn: apiService.getReports
   });
+  
+  const generateReportMutation = useMutation({
+    mutationFn: apiService.generateReport,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
+      toast({
+        title: "Report generated",
+        description: "Your report has been generated successfully"
+      });
+      setGeneratingReport(null);
+    },
+    onError: () => {
+      toast({
+        title: "Report generation failed",
+        description: "There was an error generating your report",
+        variant: "destructive"
+      });
+      setGeneratingReport(null);
+    }
+  });
+  
+  const handleGenerateReport = (type: string) => {
+    setGeneratingReport(type);
+    generateReportMutation.mutate(type);
+  };
   
   if (error) {
     toast({
@@ -41,7 +68,37 @@ export default function Reports() {
       <SideNav />
       <div className="flex-1 overflow-auto">
         <div className="container mx-auto p-6 space-y-6">
-          <h1 className="text-3xl font-bold tracking-tight">Feed Reports</h1>
+          <div className="flex justify-between items-center">
+            <h1 className="text-3xl font-bold tracking-tight">Feed Reports</h1>
+            
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => handleGenerateReport('amazon')}
+                disabled={generatingReport === 'amazon'}
+              >
+                {generatingReport === 'amazon' ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <FilePlus className="h-4 w-4 mr-2" />
+                )}
+                Generate Amazon Feed
+              </Button>
+              
+              <Button 
+                variant="outline"
+                onClick={() => handleGenerateReport('stock')} 
+                disabled={generatingReport === 'stock'}
+              >
+                {generatingReport === 'stock' ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <FilePlus className="h-4 w-4 mr-2" />
+                )}
+                Generate Stock Report
+              </Button>
+            </div>
+          </div>
           
           <div className="flex gap-3 mb-6">
             <Button 

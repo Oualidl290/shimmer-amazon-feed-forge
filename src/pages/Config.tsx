@@ -8,6 +8,7 @@ import { apiService } from "@/lib/api-service";
 import { ScrapingConfig } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
+import { Loader2, Check, X, Play, Database } from "lucide-react";
 
 export default function Config() {
   const { toast } = useToast();
@@ -21,6 +22,8 @@ export default function Config() {
   });
   
   const [isSaving, setIsSaving] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   
   const { data: configData, isLoading, error } = useQuery({
     queryKey: ['config'],
@@ -55,6 +58,37 @@ export default function Config() {
       setIsSaving(false);
     }
   };
+  
+  const handleTestConnection = async () => {
+    setIsTesting(true);
+    setTestResult(null);
+    
+    try {
+      const result = await apiService.testConnection(config.supplierUrl);
+      setTestResult(result);
+      
+      if (result.success) {
+        toast({
+          title: "Connection successful",
+          description: "Successfully connected to the supplier website"
+        });
+      } else {
+        toast({
+          title: "Connection failed",
+          description: result.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Connection test failed",
+        description: "There was an error testing the connection",
+        variant: "destructive",
+      });
+    } finally {
+      setIsTesting(false);
+    }
+  };
 
   return (
     <div className="flex h-screen bg-background">
@@ -72,12 +106,37 @@ export default function Config() {
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="supplierUrl">Supplier URL</Label>
-                  <Input 
-                    id="supplierUrl"
-                    value={config.supplierUrl}
-                    onChange={(e) => setConfig({...config, supplierUrl: e.target.value})}
-                    placeholder="https://example.com"
-                  />
+                  <div className="flex gap-2">
+                    <Input 
+                      id="supplierUrl"
+                      value={config.supplierUrl}
+                      onChange={(e) => setConfig({...config, supplierUrl: e.target.value})}
+                      placeholder="https://example.com"
+                      className="flex-1"
+                    />
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={handleTestConnection}
+                      disabled={!config.supplierUrl || isTesting}
+                    >
+                      {isTesting ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : testResult ? (
+                        testResult.success ? (
+                          <Check className="h-4 w-4 mr-2 text-green-600" />
+                        ) : (
+                          <X className="h-4 w-4 mr-2 text-red-600" />
+                        )
+                      ) : null}
+                      Test Connection
+                    </Button>
+                  </div>
+                  {testResult && (
+                    <p className={`text-sm mt-1 ${testResult.success ? 'text-green-600' : 'text-red-600'}`}>
+                      {testResult.message}
+                    </p>
+                  )}
                 </div>
                 
                 <div className="space-y-2">
@@ -140,10 +199,36 @@ export default function Config() {
                   </select>
                 </div>
                 
-                <div className="pt-4">
-                  <Button type="submit" disabled={isSaving}>
-                    {isSaving ? "Saving..." : "Save Configuration"}
+                <div className="pt-4 flex justify-between">
+                  <Button 
+                    type="button" 
+                    variant="outline"
+                    onClick={() => {
+                      if (configData) {
+                        setConfig(configData);
+                      }
+                    }}
+                  >
+                    Reset
                   </Button>
+                  
+                  <div className="flex gap-2">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      className="flex gap-2"
+                      onClick={() => {
+                        window.location.href = "/";
+                      }}
+                    >
+                      <Play className="h-4 w-4" />
+                      Test Scraper
+                    </Button>
+                    <Button type="submit" disabled={isSaving} className="flex gap-2">
+                      {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />}
+                      {isSaving ? "Saving..." : "Save Configuration"}
+                    </Button>
+                  </div>
                 </div>
               </form>
             )}

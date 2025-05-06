@@ -1,4 +1,3 @@
-
 import { Product, ScrapingJob, ScrapingConfig, FeedReport, DashboardStats } from './types';
 
 // Mock data for development
@@ -107,15 +106,83 @@ const DEFAULT_CONFIG: ScrapingConfig = {
   exportFormat: "xlsx"
 };
 
+// Simulated scraping state
+let scrapingStatus = {
+  status: 'idle' as 'idle' | 'running' | 'completed' | 'failed',
+  progress: 0,
+  currentCategory: '',
+  totalProducts: 0,
+  errors: 0
+};
+
+// Simulate scraping process
+const simulateScraping = () => {
+  let progress = 0;
+  const categories = ['Necklaces', 'Earrings', 'Rings', 'Bracelets', 'Pendants'];
+  let categoryIndex = 0;
+  
+  scrapingStatus.status = 'running';
+  scrapingStatus.progress = 0;
+  scrapingStatus.currentCategory = categories[0];
+  
+  const interval = setInterval(() => {
+    progress += 5;
+    
+    if (progress >= 100 && categoryIndex < categories.length - 1) {
+      categoryIndex++;
+      progress = 0;
+      scrapingStatus.currentCategory = categories[categoryIndex];
+    }
+    
+    scrapingStatus.progress = progress;
+    
+    if (progress >= 100 && categoryIndex === categories.length - 1) {
+      clearInterval(interval);
+      scrapingStatus.status = 'completed';
+      scrapingStatus.totalProducts = 6248;
+      
+      // Add a new job to the mock jobs
+      const newJob: ScrapingJob = {
+        id: `job_${Date.now()}`,
+        startTime: new Date().toISOString(),
+        endTime: new Date().toISOString(),
+        status: 'completed',
+        totalProducts: 6248,
+        errors: 12,
+        categories: [...categories],
+        duration: "45 min"
+      };
+      
+      MOCK_JOBS.unshift(newJob);
+      
+      // Add a new report to mock reports
+      const newReport: FeedReport = {
+        id: `report_${Date.now()}`,
+        name: `amazon-jewelry-feed-${new Date().toISOString().split('T')[0]}.xlsx`,
+        date: new Date().toISOString().split('T')[0],
+        type: "amazon",
+        fileSize: "3.3 MB",
+        products: 6248
+      };
+      
+      MOCK_REPORTS.unshift(newReport);
+    }
+  }, 1000);
+  
+  return interval;
+};
+
+let scrapingInterval: NodeJS.Timeout | null = null;
+
 // API Services
 export const apiService = {
   // Dashboard
   getDashboardStats: async (): Promise<DashboardStats> => {
     // In a real app, this would be a fetch request to your backend
     return {
-      totalProducts: 6248,
+      totalProducts: scrapingStatus.status === 'completed' ? scrapingStatus.totalProducts : 6248,
       lastScrapeTime: "32 min ago",
-      failedProducts: 18,
+      failedProducts: scrapingStatus.status === 'completed' ? scrapingStatus.errors : 18,
       feedStatus: "Ready",
       categoryProgress: [
         { name: "Necklaces", value: 100, status: "completed" },
@@ -125,6 +192,11 @@ export const apiService = {
         { name: "Pendants", value: 0, status: "idle" }
       ]
     };
+  },
+  
+  // Scraping Status
+  getScrapingStatus: async () => {
+    return scrapingStatus;
   },
 
   // Jobs
@@ -148,10 +220,21 @@ export const apiService = {
       categories: ["necklaces", "earrings", "rings", "bracelets", "pendants"]
     };
     
-    // Simulate job being added to database
-    // In a real app, this would be stored in your database
+    // Start the simulation
+    if (scrapingInterval) clearInterval(scrapingInterval);
+    scrapingInterval = simulateScraping();
     
     return newJob;
+  },
+  
+  stopScrapeJob: async (): Promise<void> => {
+    // Stop the simulation
+    if (scrapingInterval) {
+      clearInterval(scrapingInterval);
+      scrapingInterval = null;
+    }
+    
+    scrapingStatus.status = 'idle';
   },
 
   // Reports
@@ -162,6 +245,23 @@ export const apiService = {
 
   getReportById: async (id: string): Promise<FeedReport | null> => {
     return MOCK_REPORTS.find(report => report.id === id) || null;
+  },
+  
+  generateReport: async (type: string): Promise<FeedReport> => {
+    // In a real app, this would generate a real report
+    const newReport: FeedReport = {
+      id: `report_${Date.now()}`,
+      name: `${type}-report-${new Date().toISOString().split('T')[0]}.xlsx`,
+      date: new Date().toISOString().split('T')[0],
+      type: type as any,
+      fileSize: "3.2 MB",
+      products: 6248
+    };
+    
+    // Add to mock data
+    MOCK_REPORTS.unshift(newReport);
+    
+    return newReport;
   },
 
   // Config
@@ -174,5 +274,20 @@ export const apiService = {
     // In a real app, this would update the config on your backend
     console.info("Saving config:", { ...DEFAULT_CONFIG, ...config });
     return { ...DEFAULT_CONFIG, ...config };
+  },
+  
+  // Settings
+  testConnection: async (url: string): Promise<{ success: boolean; message: string }> => {
+    // Simulate connection testing
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Randomly succeed or fail for demo purposes
+    const success = Math.random() > 0.3;
+    return {
+      success,
+      message: success 
+        ? "Connection successful! Found product data." 
+        : "Connection failed. Please check the URL and try again."
+    };
   }
 };

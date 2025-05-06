@@ -5,19 +5,29 @@ import StatusCard from "@/components/dashboard/StatusCard";
 import ProgressBar from "@/components/dashboard/ProgressBar";
 import ScrapeButton from "@/components/dashboard/ScrapeButton";
 import RecentFeeds from "@/components/dashboard/RecentFeeds";
+import ScrapingStatus from "@/components/dashboard/ScrapingStatus";
 import SideNav from "@/components/layout/SideNav";
 import { apiService } from "@/lib/api-service";
 import { DashboardStats } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
+import { useScrapingContext } from "@/context/ScrapingContext";
 
 export default function Dashboard() {
   const { toast } = useToast();
+  const { status: scrapingStatus } = useScrapingContext();
   
-  const { data: stats, isLoading, error } = useQuery({
+  const { data: stats, isLoading, error, refetch } = useQuery({
     queryKey: ['dashboardStats'],
     queryFn: apiService.getDashboardStats
   });
+
+  // Refetch data when scraping status changes
+  useEffect(() => {
+    if (scrapingStatus === 'completed') {
+      refetch();
+    }
+  }, [scrapingStatus, refetch]);
   
   // Handle successful scraping job start
   const handleScrapeSuccess = () => {
@@ -44,6 +54,9 @@ export default function Dashboard() {
             <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
             <ScrapeButton onSuccess={handleScrapeSuccess} />
           </div>
+
+          {/* Scraping Status Component */}
+          <ScrapingStatus />
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             <StatusCard 
