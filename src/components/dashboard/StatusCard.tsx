@@ -8,6 +8,8 @@ type StatusCardProps = {
   className?: string;
   loading?: boolean;
   icon?: React.ReactNode;
+  change?: string;
+  trend?: "up" | "down" | "neutral";
 };
 
 export default function StatusCard({ 
@@ -16,7 +18,9 @@ export default function StatusCard({
   subtitle, 
   className, 
   loading = false,
-  icon
+  icon,
+  change,
+  trend
 }: StatusCardProps) {
   return (
     <div className={cn(
@@ -35,6 +39,16 @@ export default function StatusCard({
               <p className="text-sm text-muted-foreground pb-1">{subtitle}</p>
             )}
           </div>
+          {change && (
+            <p className={cn(
+              "text-xs mt-1",
+              trend === "up" ? "text-emerald-500" : 
+              trend === "down" ? "text-red-500" : 
+              "text-muted-foreground"
+            )}>
+              {change}
+            </p>
+          )}
         </div>
         {icon && (
           <div className="text-brand-500">

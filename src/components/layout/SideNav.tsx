@@ -1,17 +1,18 @@
 
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { 
   BarChart, 
   Settings, 
-  Database, 
-  Calendar, 
   FileText, 
+  History,
+  Database,
   Home,
   Play,
-  History
+  Cog
 } from "lucide-react";
+import ScrapeButton from "../dashboard/ScrapeButton";
 
 type NavItemProps = {
   icon: React.ReactNode;
@@ -39,6 +40,9 @@ const NavItem = ({ icon, label, href, active }: NavItemProps) => (
 );
 
 export default function SideNav() {
+  const location = useLocation();
+  const currentPath = location.pathname;
+
   return (
     <div className="hidden border-r bg-background lg:block">
       <div className="flex h-full max-h-screen flex-col gap-2">
@@ -47,44 +51,45 @@ export default function SideNav() {
             <div className="h-7 w-7 rounded-md bg-brand-600 flex items-center justify-center">
               <Database className="h-5 w-5 text-white" />
             </div>
-            <span className="text-lg">AmazonFeedForge</span>
+            <span className="text-lg">JewelryFeedForge</span>
           </Link>
         </div>
         <div className="flex-1 overflow-auto py-2">
-          <nav className="grid items-start px-2 text-sm font-medium">
+          <nav className="grid items-start px-2 text-sm font-medium space-y-1">
             <NavItem
-              active
+              active={currentPath === "/"}
               icon={<Home className="h-4 w-4" />}
               label="Dashboard"
               href="/"
             />
             <NavItem
-              icon={<Settings className="h-4 w-4" />}
+              active={currentPath === "/config"}
+              icon={<Cog className="h-4 w-4" />}
               label="Configuration"
               href="/config"
             />
             <NavItem
+              active={currentPath === "/reports"}
               icon={<FileText className="h-4 w-4" />}
-              label="Feed Preview"
-              href="/feed"
+              label="Feed Reports"
+              href="/reports"
             />
             <NavItem
+              active={currentPath === "/history"}
               icon={<History className="h-4 w-4" />}
               label="Job History"
               href="/history"
             />
             <NavItem
-              icon={<Calendar className="h-4 w-4" />}
-              label="Schedule"
-              href="/schedule"
+              active={currentPath === "/settings"}
+              icon={<Settings className="h-4 w-4" />}
+              label="Settings"
+              href="/settings"
             />
           </nav>
         </div>
         <div className="px-3 py-2">
-          <button className="w-full flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 text-white py-2 px-3 rounded-md transition-all">
-            <Play className="h-4 w-4" />
-            <span>Start Scraper</span>
-          </button>
+          <ScrapeButton variant="default" />
         </div>
       </div>
     </div>
