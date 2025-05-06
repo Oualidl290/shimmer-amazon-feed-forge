@@ -1,9 +1,9 @@
 
+import { useState, useEffect } from "react";
 import SideNav from "@/components/layout/SideNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Settings() {
@@ -22,22 +22,53 @@ export default function Settings() {
     slackWebhook: ""
   });
 
-  const handleSaveAmazon = (e: React.FormEvent) => {
+  const [isSavingAmazon, setIsSavingAmazon] = useState(false);
+  const [isSavingNotifications, setIsSavingNotifications] = useState(false);
+
+  const handleSaveAmazon = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Here you would save the Amazon settings
-    toast({
-      title: "Amazon settings saved",
-      description: "Your Amazon integration settings have been updated"
-    });
+    setIsSavingAmazon(true);
+    
+    try {
+      // In a real app, this would be an API call to save Amazon settings
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      
+      toast({
+        title: "Amazon settings saved",
+        description: "Your Amazon integration settings have been updated"
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to save settings",
+        description: "There was an error saving your Amazon settings.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingAmazon(false);
+    }
   };
 
-  const handleSaveNotifications = (e: React.FormEvent) => {
+  const handleSaveNotifications = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Here you would save the notification settings
-    toast({
-      title: "Notification settings saved",
-      description: "Your notification preferences have been updated"
-    });
+    setIsSavingNotifications(true);
+    
+    try {
+      // In a real app, this would be an API call to save notification settings
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      
+      toast({
+        title: "Notification settings saved",
+        description: "Your notification preferences have been updated"
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to save settings",
+        description: "There was an error saving your notification settings.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingNotifications(false);
+    }
   };
 
   return (
@@ -96,7 +127,9 @@ export default function Settings() {
                   </select>
                 </div>
                 
-                <Button type="submit">Save Amazon Settings</Button>
+                <Button type="submit" disabled={isSavingAmazon}>
+                  {isSavingAmazon ? "Saving..." : "Save Amazon Settings"}
+                </Button>
               </form>
             </div>
             
@@ -150,7 +183,9 @@ export default function Settings() {
                   </div>
                 )}
                 
-                <Button type="submit">Save Notification Settings</Button>
+                <Button type="submit" disabled={isSavingNotifications}>
+                  {isSavingNotifications ? "Saving..." : "Save Notification Settings"}
+                </Button>
               </form>
             </div>
           </div>

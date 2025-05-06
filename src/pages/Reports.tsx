@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import SideNav from "@/components/layout/SideNav";
 import { 
   Table, 
@@ -10,60 +11,31 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Download, Eye } from "lucide-react";
-
-type Report = {
-  id: string;
-  name: string;
-  date: string;
-  type: "amazon" | "stock" | "errors";
-  fileSize: string;
-  products: number;
-};
-
-const MOCK_REPORTS: Report[] = [
-  {
-    id: "report_1",
-    name: "amazon-jewelry-feed-20250506.xlsx",
-    date: "May 6, 2025",
-    type: "amazon",
-    fileSize: "3.2 MB",
-    products: 6248
-  },
-  {
-    id: "report_2",
-    name: "out-of-stock-20250506.xlsx",
-    date: "May 6, 2025",
-    type: "stock",
-    fileSize: "156 KB",
-    products: 843
-  },
-  {
-    id: "report_3",
-    name: "error-products-20250506.xlsx",
-    date: "May 6, 2025",
-    type: "errors",
-    fileSize: "24 KB",
-    products: 18
-  },
-  {
-    id: "report_4",
-    name: "amazon-jewelry-feed-20250505.xlsx",
-    date: "May 5, 2025",
-    type: "amazon",
-    fileSize: "3.1 MB",
-    products: 6106
-  },
-  {
-    id: "report_5",
-    name: "out-of-stock-20250505.xlsx",
-    date: "May 5, 2025",
-    type: "stock",
-    fileSize: "160 KB",
-    products: 867
-  }
-];
+import { useQuery } from "@tanstack/react-query";
+import { apiService } from "@/lib/api-service";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Reports() {
+  const { toast } = useToast();
+  const [filterType, setFilterType] = useState<string | null>(null);
+  
+  const { data: reports, isLoading, error } = useQuery({
+    queryKey: ['reports'],
+    queryFn: apiService.getReports
+  });
+  
+  if (error) {
+    toast({
+      title: "Error loading reports",
+      description: "Failed to load report data. Please try refreshing.",
+      variant: "destructive",
+    });
+  }
+  
+  const filteredReports = filterType 
+    ? reports?.filter(report => report.type === filterType)
+    : reports;
+  
   return (
     <div className="flex h-screen bg-background">
       <SideNav />
@@ -72,10 +44,30 @@ export default function Reports() {
           <h1 className="text-3xl font-bold tracking-tight">Feed Reports</h1>
           
           <div className="flex gap-3 mb-6">
-            <Button variant="outline">All Reports</Button>
-            <Button variant="outline">Amazon Feeds</Button>
-            <Button variant="outline">Stock Reports</Button>
-            <Button variant="outline">Error Reports</Button>
+            <Button 
+              variant={filterType === null ? "default" : "outline"}
+              onClick={() => setFilterType(null)}
+            >
+              All Reports
+            </Button>
+            <Button 
+              variant={filterType === "amazon" ? "default" : "outline"}
+              onClick={() => setFilterType("amazon")}
+            >
+              Amazon Feeds
+            </Button>
+            <Button 
+              variant={filterType === "stock" ? "default" : "outline"}
+              onClick={() => setFilterType("stock")}
+            >
+              Stock Reports
+            </Button>
+            <Button 
+              variant={filterType === "errors" ? "default" : "outline"}
+              onClick={() => setFilterType("errors")}
+            >
+              Error Reports
+            </Button>
           </div>
           
           <div className="rounded-lg border bg-card">
@@ -91,34 +83,48 @@ export default function Reports() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {MOCK_REPORTS.map((report) => (
-                  <TableRow key={report.id}>
-                    <TableCell className="font-medium">{report.name}</TableCell>
-                    <TableCell>{report.date}</TableCell>
-                    <TableCell>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                        ${report.type === 'amazon' ? 'bg-blue-100 text-blue-800' : 
-                          report.type === 'stock' ? 'bg-amber-100 text-amber-800' : 
-                          'bg-red-100 text-red-800'}`}
-                      >
-                        {report.type === 'amazon' ? 'Amazon Feed' : 
-                          report.type === 'stock' ? 'Stock Report' : 'Error Report'}
-                      </span>
-                    </TableCell>
-                    <TableCell>{report.products.toLocaleString()}</TableCell>
-                    <TableCell>{report.fileSize}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon">
-                          <Download className="h-4 w-4" />
-                        </Button>
-                      </div>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center">
+                      Loading reports...
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : filteredReports && filteredReports.length > 0 ? (
+                  filteredReports.map((report) => (
+                    <TableRow key={report.id}>
+                      <TableCell className="font-medium">{report.name}</TableCell>
+                      <TableCell>{report.date}</TableCell>
+                      <TableCell>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                          ${report.type === 'amazon' ? 'bg-blue-100 text-blue-800' : 
+                            report.type === 'stock' ? 'bg-amber-100 text-amber-800' : 
+                            'bg-red-100 text-red-800'}`}
+                        >
+                          {report.type === 'amazon' ? 'Amazon Feed' : 
+                            report.type === 'stock' ? 'Stock Report' : 'Error Report'}
+                        </span>
+                      </TableCell>
+                      <TableCell>{report.products.toLocaleString()}</TableCell>
+                      <TableCell>{report.fileSize}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button variant="ghost" size="icon">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon">
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center">
+                      No reports found.
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </div>

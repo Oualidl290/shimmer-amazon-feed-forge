@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Play, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { apiService } from "@/lib/api-service";
 
 type ScrapeButtonProps = {
   onSuccess?: () => void;
@@ -21,10 +22,9 @@ export default function ScrapeButton({
   const handleScrape = async () => {
     setIsLoading(true);
     
-    // In a real implementation, this would call the API
     try {
-      // Simulating API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Call the API to start a scraping job
+      const job = await apiService.startScrapeJob();
       
       toast({
         title: "Scraping started successfully",
